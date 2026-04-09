@@ -29,15 +29,17 @@ def create_spark_session():
         .appName('StreamCart-Bronze-Orders') \
         .master('local[2]') \
         .config('spark.jars.packages',
-                'org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0,'
-                'org.apache.hadoop:hadoop-aws:3.3.4,'
-                'com.amazonaws:aws-java-sdk-bundle:1.12.262') \
+                'org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.0,'
+                'org.apache.hadoop:hadoop-aws:3.4.1,'
+                'com.amazonaws:aws-java-sdk-bundle:1.12.583') \
         .config('spark.hadoop.fs.s3a.access.key', AWS_ACCESS_KEY) \
         .config('spark.hadoop.fs.s3a.secret.key', AWS_SECRET_KEY) \
         .config('spark.hadoop.fs.s3a.endpoint', f's3.{AWS_REGION}.amazonaws.com') \
         .config('spark.hadoop.fs.s3a.impl', 'org.apache.hadoop.fs.s3a.S3AFileSystem') \
         .config('spark.hadoop.fs.s3a.aws.credentials.provider',
                 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider') \
+        .config('spark.hadoop.fs.s3a.connection.timeout', '300000') \
+        .config('spark.hadoop.fs.s3a.socket.timeout', '300000') \
         .getOrCreate()
 
 def read_kafka_stream(spark):
@@ -66,7 +68,6 @@ def write_to_s3(df):
         .outputMode('append') \
         .option('path', BRONZE_PATH) \
         .option('checkpointLocation', CHECKPOINT_PATH) \
-        .trigger(processingTime='30 seconds') \
         .start()
 
 if __name__ == '__main__':
