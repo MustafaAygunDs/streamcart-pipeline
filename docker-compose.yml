@@ -27,6 +27,23 @@ services:
     networks:
       - streamcart-network
 
+  postgres:
+    image: postgres:15
+    container_name: streamcart-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - streamcart_postgres_data:/var/lib/postgresql/data
+    networks:
+      - streamcart-network
+
 networks:
   streamcart-network:
     driver: bridge
+
+volumes:
+  streamcart_postgres_data:
