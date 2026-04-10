@@ -163,6 +163,7 @@ Airflow metadata is isolated in its own `airflow_db` database, preventing schema
 ---
 
 ## Project Structure
+```
 streamcart-pipeline/
 ├── ingestion/producers/          # Kafka event replay producer
 ├── processing/
@@ -176,6 +177,7 @@ streamcart-pipeline/
 ├── Makefile
 ├── requirements.txt
 └── .env.example
+```
 
 ---
 
