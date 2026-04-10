@@ -187,7 +187,7 @@ streamcart-pipeline/
 | Bronze Parquet files | 895 |
 | Duplicates removed (Silver) | 10 |
 | Gold tables | 6 |
-| Data quality score | **10/10 ✅** |
+| Data quality score | 10/10 PASSED |
 | Kafka events replayed | 99,441 orders + 112,650 items |
 
 ---
