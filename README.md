@@ -22,7 +22,6 @@ Spark Batch — Gold Layer (Star Schema)
 ↓
 PostgreSQL — fact_orders, dim_customer...
 ↓
-Power BI Dashboard
 ```
 
 **Orchestration:** Apache Airflow DAG (`Silver → Quality → Gold`, `@daily`)  
@@ -183,6 +182,17 @@ streamcart-pipeline/
 
 ---
 
+## 🔧 Challenges & Solutions
+
+**`datetime.UTC` AttributeError on Python 3.12**
+`orders_producer.py` used `datetime.now(datetime.UTC)` which raised `AttributeError: type object 'datetime' has no attribute 'UTC'`. Python 3.12 requires `timezone.utc` from the `datetime` module. Fixed with `from datetime import datetime, timezone` and `datetime.now(timezone.utc)`.
+
+**`to_timestamp` Crashing on Olist NaN Dates**
+The real Olist dataset contains NaN values in date columns (e.g. `order_delivered_customer_date`). Using `to_timestamp` caused the Silver job to fail on these rows. Switched to `try_to_timestamp` which converts malformed inputs to NULL instead of raising an exception — the production-safe approach.
+
+**Spark 4.1.1 + Hadoop AWS JAR Compatibility**
+Bronze streaming job failed to write to S3 due to JAR version conflicts between `spark-sql-kafka`, `hadoop-aws`, and `aws-java-sdk-bundle`. Resolved by pinning compatible versions: `hadoop-aws:3.4.1` and `aws-java-sdk-bundle:1.12.583`.
+
 ## Performance Metrics
 
 | Metric | Value |
@@ -196,8 +206,8 @@ streamcart-pipeline/
 
 ---
 
-## About
+## 👤 Author
 
-**Mustafa Aygün** — Data Engineer  
-- GitHub: [MustafaAygunDs](https://github.com/MustafaAygunDs)  
-- LinkedIn: [mustafaaygunds](https://www.linkedin.com/in/mustafaaygunds/)
+Mustafa Aygün — Data Engineer
+- GitHub: [@MustafaAygunDs](https://github.com/MustafaAygunDs)
+- Email: mustafaaygunds@gmail.com
