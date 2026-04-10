@@ -41,9 +41,9 @@ services:
     networks:
       - streamcart-network
 
-  airflow:
+  airflow-webserver:
     image: apache/airflow:2.8.1
-    container_name: streamcart-airflow
+    container_name: streamcart-airflow-webserver
     depends_on:
       - postgres
     environment:
@@ -52,16 +52,31 @@ services:
       AIRFLOW__CORE__FERNET_KEY: 'ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg='
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__LOGGING__BASE_LOG_FOLDER: '/opt/airflow/logs'
     volumes:
       - ./orchestration/dags:/opt/airflow/dags
       - streamcart_airflow_logs:/opt/airflow/logs
     ports:
       - "8081:8080"
-    command: >
-      bash -c "airflow db migrate &&
-               airflow users create --username admin --password admin --firstname Admin --lastname Admin --role Admin --email admin@streamcart.com &&
-               airflow webserver & airflow scheduler"
+    command: webserver
+    networks:
+      - streamcart-network
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    container_name: streamcart-airflow-scheduler
+    depends_on:
+      - postgres
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@streamcart-postgres:5432/airflow_db
+      AIRFLOW__CORE__FERNET_KEY: 'ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg='
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./orchestration/dags:/opt/airflow/dags
+      - streamcart_airflow_logs:/opt/airflow/logs
+    command: scheduler
     networks:
       - streamcart-network
 
