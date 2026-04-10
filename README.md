@@ -44,14 +44,14 @@ Power BI Dashboard
 
 ---
 
-## Data Model — Gold Layer (Star Schema)
+```
 fact_orders       (99,441 rows)
 ├── dim_customer  (99,441 rows)
 ├── dim_product   (32,951 rows)
 ├── dim_seller    ( 3,095 rows)
 └── dim_date      (   634 rows)
 fact_order_items  (112,650 rows)
-
+```
 ---
 
 ## Quick Start
