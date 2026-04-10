@@ -6,8 +6,8 @@ A production-grade, end-to-end data engineering project that processes e-commerc
 
 ## Architecture Overview
 
-```
 **Data Flow:**
+```
 Olist Dataset → Kafka Producer → Apache Kafka
 ↓
 Spark Structured Streaming
