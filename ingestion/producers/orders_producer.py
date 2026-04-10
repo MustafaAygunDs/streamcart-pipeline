@@ -3,7 +3,7 @@ import json
 import time
 import logging
 from kafka import KafkaProducer
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -35,7 +35,7 @@ def replay_orders(producer, orders, order_items):
     logger.info("Replay başlıyor...")
     for idx, order in orders.iterrows():
         order_dict = order.to_dict()
-        order_dict['ingestion_timestamp'] = datetime.now(datetime.UTC).isoformat()
+        order_dict['ingestion_timestamp'] = datetime.now(timezone.utc).isoformat()
         order_dict['source'] = 'olist_replay'
 
         producer.send(
@@ -47,7 +47,7 @@ def replay_orders(producer, orders, order_items):
         items = order_items[order_items['order_id'] == order_dict['order_id']]
         for _, item in items.iterrows():
             item_dict = item.to_dict()
-            item_dict['ingestion_timestamp'] = datetime.now(datetime.UTC).isoformat()
+            item_dict['ingestion_timestamp'] = datetime.now(timezone.utc).isoformat()
             item_dict['source'] = 'olist_replay'
             producer.send(
                 ORDER_ITEMS_TOPIC,
