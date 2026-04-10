@@ -4,34 +4,27 @@ A production-grade, end-to-end data engineering project that processes e-commerc
 
 ---
 
-## Architecture
-[Olist Dataset]
-│
-▼
-[Apache Kafka]  ◄─── orders_producer.py (99K+ events replayed)
-│
-▼
-[Spark Structured Streaming]
-│
-▼
-[AWS S3 — Bronze Layer]  ← Raw Parquet files (895 files, append-only)
-│
-▼
-[Spark Batch — Silver Layer]  ← Dedup, null handling, JSON parse, type casting
-│
-▼
-[Great Expectations]  ← 10 automated data quality checks
-│
-▼
-[Spark Batch — Gold Layer]  ← Star Schema loaded into PostgreSQL
-│
-▼
-[PostgreSQL — Star Schema]  ← fact_orders, dim_customer, dim_product...
-│
-▼
-[Power BI Dashboard]  ← Sales KPIs, conversion funnel, inventory alerts
-Orchestration: Apache Airflow (DAG: Silver → Quality → Gold, @daily)
-Infrastructure: Docker Compose (single command setup)
+## Architecture Overview
+
+**Data Flow:**
+Olist Dataset → Kafka Producer → Apache Kafka
+↓
+Spark Structured Streaming
+↓
+AWS S3 — Bronze Layer (Raw Parquet)
+↓
+Spark Batch — Silver Layer (Cleaned)
+↓
+Great Expectations (10 Quality Checks)
+↓
+Spark Batch — Gold Layer (Star Schema)
+↓
+PostgreSQL — fact_orders, dim_customer...
+↓
+Power BI Dashboard
+
+**Orchestration:** Apache Airflow DAG (`Silver → Quality → Gold`, `@daily`)  
+**Infrastructure:** Docker Compose — single command setup (`make up`)
 
 ---
 
@@ -43,7 +36,7 @@ Infrastructure: Docker Compose (single command setup)
 | Stream Processing | Apache Spark 4.1.1 Structured Streaming |
 | Batch Processing | Apache Spark 4.1.1 |
 | Data Lake | AWS S3 (Bronze / Silver layers) |
-| Data Warehouse | PostgreSQL 15 via AWS RDS (Gold layer) |
+| Data Warehouse | PostgreSQL 15 (Gold layer) |
 | Orchestration | Apache Airflow 2.8.1 |
 | Data Quality | Great Expectations 0.18.19 |
 | Infrastructure | Docker Compose |
@@ -52,12 +45,12 @@ Infrastructure: Docker Compose (single command setup)
 ---
 
 ## Data Model — Gold Layer (Star Schema)
-fact_orders (99,441 rows)
-├── dim_customer (99,441 rows)
-├── dim_product  (32,951 rows)
-├── dim_seller   ( 3,095 rows)
-└── dim_date     (   634 rows)
-fact_order_items (112,650 rows)
+fact_orders       (99,441 rows)
+├── dim_customer  (99,441 rows)
+├── dim_product   (32,951 rows)
+├── dim_seller    ( 3,095 rows)
+└── dim_date      (   634 rows)
+fact_order_items  (112,650 rows)
 
 ---
 
@@ -93,8 +86,7 @@ make etl
 make test
 ```
 
-### Airflow UI
-Navigate to **http://localhost:8081** — login with `admin / admin`
+**Airflow UI:** http://localhost:8081 — login with `admin / admin`
 
 ---
 
@@ -104,13 +96,13 @@ Navigate to **http://localhost:8081** — login with `admin / admin`
 Reads order events from Kafka and writes raw Parquet files to S3 (append-only, immutable).
 
 ```bash
-make bronze   # Start Spark Structured Streaming job
+make bronze
 ```
 
-- Source: Apache Kafka topic `olist.orders`
+- Source: Kafka topic `olist.orders`
 - Sink: `s3://streamcart-data-lake/bronze/streaming/orders/`
 - Format: Snappy-compressed Parquet
-- Output: 895 Parquet files
+- Output: **895 Parquet files**
 
 ### Silver — Batch Transformation
 Cleans and enriches the Bronze data.
@@ -122,6 +114,7 @@ Cleans and enriches the Bronze data.
 - Partitioned by `order_status`
 
 ### Data Quality
+
 10 automated checks via Great Expectations before loading to Gold.
 
 | Check | Result |
@@ -138,58 +131,47 @@ Cleans and enriches the Bronze data.
 | dim_customer row count | ✅ |
 
 ```bash
-make test   # Run all quality checks
+make test
 ```
 
 ### Gold — Star Schema Load
 Loads cleaned Silver data into PostgreSQL using Kimball star schema.
 
 ```bash
-make etl   # Run Silver + Gold pipeline
+make etl
 ```
 
 ---
 
 ## Key Technical Decisions
 
-**Medallion Architecture (Bronze / Silver / Gold)**
+**Medallion Architecture (Bronze / Silver / Gold)**  
 Each layer is immutable and independently replayable. Raw data is always preserved in Bronze, enabling full reprocessing without re-ingestion.
 
-**Hybrid Ingestion (Streaming + Batch)**
-Clickstream and order events use Kafka → Spark Streaming (low latency). Dimension data (products, sellers) uses batch CDC — matching real-world e-commerce platform patterns used by Trendyol and Getir.
+**Hybrid Ingestion (Streaming + Batch)**  
+Order events use Kafka → Spark Streaming (low latency). Dimension data uses batch CDC — matching real-world patterns used by Trendyol and Getir.
 
-**try_to_timestamp over to_timestamp**
-Olist's real dataset contains `NaN` values in date columns. Using `try_to_timestamp` converts malformed inputs to NULL instead of failing — this is the production-safe approach.
+**`try_to_timestamp` over `to_timestamp`**  
+Olist's real dataset contains `NaN` values in date columns. Using `try_to_timestamp` converts malformed inputs to NULL instead of failing — the production-safe approach.
 
-**Docker Compose Single-Command Setup**
+**Docker Compose Single-Command Setup**  
 `make up` starts Kafka, Zookeeper, PostgreSQL, and Airflow. A recruiter or interviewer can have the full stack running in under 2 minutes.
 
-**Airflow with Separate Database**
-Airflow metadata is isolated in its own `airflow_db` database, preventing schema conflicts with the StreamCart `streamcart` database.
+**Airflow with Separate Database**  
+Airflow metadata is isolated in its own `airflow_db` database, preventing schema conflicts with the application database.
 
 ---
 
 ## Project Structure
 streamcart-pipeline/
-├── ingestion/
-│   └── producers/
-│       └── orders_producer.py      # Kafka event replay producer
+├── ingestion/producers/          # Kafka event replay producer
 ├── processing/
-│   ├── bronze/
-│   │   └── orders_bronze.py        # Spark Structured Streaming job
-│   ├── silver/
-│   │   └── orders_silver.py        # Batch transformation + dedup
-│   └── gold/
-│       └── orders_gold.py          # Star schema loader
-├── orchestration/
-│   └── dags/
-│       └── streamcart_pipeline.py  # Airflow DAG
-├── quality/
-│   └── expectations/
-│       └── orders_expectations.py  # Great Expectations suite
-├── scripts/
-│   ├── upload_to_s3.py             # Initial data upload
-│   └── create_gold_schema.py       # DDL script
+│   ├── bronze/                   # Spark Structured Streaming job
+│   ├── silver/                   # Batch transformation + dedup
+│   └── gold/                     # Star schema loader
+├── orchestration/dags/           # Airflow DAG
+├── quality/expectations/         # Great Expectations suite
+├── scripts/                      # Utility scripts (S3 upload, DDL)
 ├── docker-compose.yml
 ├── Makefile
 ├── requirements.txt
@@ -205,13 +187,13 @@ streamcart-pipeline/
 | Bronze Parquet files | 895 |
 | Duplicates removed (Silver) | 10 |
 | Gold tables | 6 |
-| Data quality score | 10/10 ✅ |
+| Data quality score | **10/10 ✅** |
 | Kafka events replayed | 99,441 orders + 112,650 items |
 
 ---
 
 ## About
 
-**Mustafa Aygün** — Data Engineer
-- GitHub: [MustafaAygunDs](https://github.com/MustafaAygunDs)
+**Mustafa Aygün** — Data Engineer  
+- GitHub: [MustafaAygunDs](https://github.com/MustafaAygunDs)  
 - LinkedIn: [mustafaaygunds](https://www.linkedin.com/in/mustafaaygunds/)
