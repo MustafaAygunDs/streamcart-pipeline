@@ -1,0 +1,19 @@
+# AWS
+boto3>=1.42.0
+python-dotenv>=1.0.0
+
+# Kafka
+kafka-python>=2.0.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.26.0
+
+# Database
+psycopg2-binary>=2.9.0
+
+# Data Quality
+great-expectations==0.18.19
+
+# Kaggle
+kaggle>=2.0.0
