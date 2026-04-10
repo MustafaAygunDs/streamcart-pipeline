@@ -6,6 +6,7 @@ A production-grade, end-to-end data engineering project that processes e-commerc
 
 ## Architecture Overview
 
+```
 **Data Flow:**
 Olist Dataset → Kafka Producer → Apache Kafka
 ↓
@@ -22,6 +23,7 @@ Spark Batch — Gold Layer (Star Schema)
 PostgreSQL — fact_orders, dim_customer...
 ↓
 Power BI Dashboard
+```
 
 **Orchestration:** Apache Airflow DAG (`Silver → Quality → Gold`, `@daily`)  
 **Infrastructure:** Docker Compose — single command setup (`make up`)
