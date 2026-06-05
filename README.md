@@ -208,6 +208,6 @@ Bronze streaming job failed to write to S3 due to JAR version conflicts between 
 
 ## 👤 Author
 
-Mustafa Aygün — Data Engineer
+Mustafa Aygün — Data Analyst
 - GitHub: [@MustafaAygunDs](https://github.com/MustafaAygunDs)
 - Email: mustafaaygunds@gmail.com
